@@ -2,6 +2,7 @@ format PE64 NX GUI 6.0
 entry start
 
 include 'win64_helpers.inc'
+include 'qbx_insn_helpers.inc'
 
 HelloStr db "Hello, World!", 0
 
