@@ -12,11 +12,13 @@ forward
         dw IMPL_#op
 }
 
+; marks the beginning of the QBX instruction implementation.
 macro insn name {
       IMPL_#name = $ - insn_base
       update_qbx_flags = 0
 }
 
+; marks the end of a QBX instruction implementation.
 macro endinsn {
       if update_qbx_flags
          jmp update_flags_advance
