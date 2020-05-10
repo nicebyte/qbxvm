@@ -1,28 +1,28 @@
 ; QBX <--> x64 REGISTER MAPPING
 
 ; general-purpose registers
-qbx_r0 equ r12
-qbx_r1 equ r13
-qbx_r2 equ r14
-qbx_r3 equ r15
+qr0 equ r12
+qr1 equ r13
+qr2 equ r14
+qr3 equ r15
 
-qbx_r0w equ r12w
-qbx_r1w equ r13w
-qbx_r2w equ r14w
-qbx_r3w equ r15w
+qr0w equ r12w
+qr1w equ r13w
+qr2w equ r14w
+qr3w equ r15w
 
-qbx_r0b equ r12b
-qbx_r1b equ r13b
-qbx_r2b equ r14b
-qbx_r3b equ r15b
+qr0b equ r12b
+qr1b equ r13b
+qr2b equ r14b
+qr3b equ r15b
 
 ; stack ptr
-qbx_sp equ rbx
-qbx_spw equ bx
-qbx_spb equ bl
+qsp equ rbx
+qspw equ bx
+qspb equ bl
 
 ; insn ptr
-qbx_ip equ rsi
+qip equ rsi
 
 ; flags
-qbx_flags equ r11
+qflags equ r11

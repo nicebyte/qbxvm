@@ -13,12 +13,12 @@ section '.code' code readable executable
         define_jmp_table qbx_jmp_table, noop, halt
         start:
                 int3
-                xor qbx_ip, qbx_ip ; zero out instruction pointer
+                xor qip, qip ; zero out instruction pointer
                 xor rdi, rdi
 
         advance:
-                mov di, word [qbx_mem + qbx_ip]            ; read the next instruction
-                add qbx_ip, 2                              ; advance instruction pointer
+                mov di, word [qbx_mem + qip]               ; read the next instruction
+                add qip, 2                                 ; advance instruction pointer
                 movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table
                 add r10, insn_base                         ; compute address of insn implementation
                 jmp r10                                    ; jump to insn implementation
@@ -36,7 +36,7 @@ section '.code' code readable executable
 
         update_flags_advance:
                 lahf
-                mov qbx_flags, rax
+                mov qflags, rax
                 jmp advance
 
 section '.idata' import readable writeable
