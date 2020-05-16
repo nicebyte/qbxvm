@@ -1,10 +1,15 @@
-macro define_jmp_table jmp_table_name*, [op*] {
+; define constants for each instruction code.
+macro define_icodes base, [insn*] {
 common
-        next_opcode = 0x00
+        local next_icode
+        next_icode = base
 forward
-        ; define constants for each opcode.
-        op = next_opcode
-        next_opcode = next_opcode + 1
+        insn = next_icode
+        next_icode = next_icode + 1
+}
+
+; define a jump table mapping instruction codes to implementations.
+macro define_jmp_table jmp_table_name*, [op*] {
 common
         jmp_table_name:
 forward

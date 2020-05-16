@@ -2,19 +2,32 @@ format PE64 NX GUI 6.0
 entry start
 
 include 'win64_helpers.inc'
+include 'qbx_instructions.inc'
 include 'qbx_insn_helpers.inc'
 include 'qbx_registers.inc'
 
-qbx_mem dw 0
-        dw 1
-        db 1024 dup ?
+qbx_insns define_icodes, 0
+
+section '.idata' import readable writeable
+        import_directory_table KERNEL32, USER32
+        import_functions KERNEL32, \
+                         AllocConsole, \
+                         WriteConsoleOutputA, \
+                         GetStdHandle, \
+                         ExitProcess
+        import_functions USER32, MessageBoxA
+
+section '.data' data readable writeable
+        qbx_mem dw noop
+                dw halt
+                db 1024 dup ?
+        qbx_insns define_jmp_table, qbx_jmp_table
 
 section '.code' code readable executable
-        define_jmp_table qbx_jmp_table, noop, halt
         start:
                 int3
                 xor qip, qip ; zero out instruction pointer
-                xor rdi, rdi
+                xor rdi, rdi ; rdi will hold the next instruction code
 
         advance:
                 mov di, word [qbx_mem + qip]               ; read the next instruction
@@ -34,18 +47,18 @@ section '.code' code readable executable
              call64 [ExitProcess], 0
         endinsn
 
+        macro moviw [reg*] {
+              insn moviw#reg
+                   mov reg, word [qbx_mem + qip]
+                   add qip, 2
+              endinsn
+        }
+        moviw q0, q1, q2, q3
+
         update_flags_advance:
                 lahf
                 mov qflags, rax
                 jmp advance
 
-section '.idata' import readable writeable
-        import_directory_table KERNEL32, USER32
-        import_functions KERNEL32, \
-                         AllocConsole, \
-                         WriteConsoleOutputA, \
-                         GetStdHandle, \
-                         ExitProcess
-        import_functions USER32, MessageBoxA
 
 
