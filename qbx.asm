@@ -6,8 +6,6 @@ include 'qbx_instructions.inc'
 include 'qbx_insn_helpers.inc'
 include 'qbx_registers.inc'
 
-qbx_insns define_icodes, 0
-
 section '.idata' import readable writeable
         import_directory_table KERNEL32, USER32
         import_functions KERNEL32, \
@@ -17,15 +15,17 @@ section '.idata' import readable writeable
                          ExitProcess
         import_functions USER32, MessageBoxA
 
+qbx_insns define_icodes, 0
+
 section '.data' data readable writeable
+        qbx_insns define_jmp_table, qbx_jmp_table
         qbx_mem dw noop
                 dw halt
                 db 1024 dup ?
-        qbx_insns define_jmp_table, qbx_jmp_table
 
 section '.code' code readable executable
-        start:
-                int3
+        start:               ; entry point - program starts here
+                int3         ; breakpoint for the debugger
                 xor qip, qip ; zero out instruction pointer
                 xor rdi, rdi ; rdi will hold the next instruction code
 
