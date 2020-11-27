@@ -120,4 +120,11 @@ common
         if stack_space
            add rsp, stack_space
         end if
-}             
+}
+
+; WIN32 API constants
+
+MB_ICONERROR equ 0x00000010
+GENERIC_READ equ 80000000h
+OPEN_EXISTING equ 3
+INVALID_HANDLE equ -1
