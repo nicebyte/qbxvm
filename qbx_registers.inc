@@ -5,6 +5,10 @@ q0 equ r12w
 q1 equ r13w
 q2 equ r14w
 q3 equ r15w
+q0w equ r12w
+q1w equ r13w
+q2w equ r14w
+q3w equ r15w
 qaddr equ r12
 
 q0b equ r12b
