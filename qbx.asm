@@ -193,14 +193,14 @@ section '.code' code readable executable
         ; addition instructions
         rept 4 sreg:0 {
              rept 4 dreg:0 \{
-                  ; byte-sized registers
-                  insn addbq\#dreg#q#sreg
+                  ; byte-sized operands
+                  insn addbq\#dreg\#q#sreg
                        add q\#dreg\#b, q#sreg#b
                        update_qbx_flags = 1
                   endinsn
 
-                  ; word-sized registers
-                  insn addwq\#dreg#q#sreg
+                  ; word-sized operands
+                  insn addwq\#dreg\#q#sreg
                        add q\#dreg\#w, q#sreg#w
                        update_qbx_flags = 1
                   endinsn
@@ -211,14 +211,14 @@ section '.code' code readable executable
         ; subtraction instructions
         rept 4 sreg:0 {
              rept 4 dreg:0 \{
-                  ; byte-sized registers
-                  insn subbq\#dreg#q#sreg
+                  ; byte-sized operands
+                  insn subbq\#dreg\#q#sreg
                        sub q\#dreg\#b, q#sreg#b
                        update_qbx_flags = 1
                   endinsn
 
-                  ; word-sized registers
-                  insn subwq\#dreg#q#sreg
+                  ; word-sized operands
+                  insn subwq\#dreg\#q#sreg
                        sub q\#dreg\#w, q#sreg#w
                        update_qbx_flags = 1
                   endinsn
@@ -226,6 +226,45 @@ section '.code' code readable executable
              \}
         }
 
+        ; unsigned multiplication
+        rept 2 sreg:2 {
+             ; byte-sized operands
+             insn mulbq#sreg
+                  mov al, q0b
+                  mul q#sreg#b
+                  mov q0, ax
+                  update_qbx_flags = 1
+             endinsn
+
+             ; word-sized operands
+             insn mulwq#sreg
+                  mov ax, q0w
+                  mul q#sreg#w
+                  mov q0, ax
+                  mov q1, dx
+                  update_qbx_flags = 1
+             endinsn
+        }
+
+        ; signed multiplication
+        rept 2 sreg:2 {
+             ; byte-sized operands
+             insn smulbq#sreg
+                  mov al, q0b
+                  imul q#sreg#b
+                  mov q0, ax
+                  update_qbx_flags = 1
+             endinsn
+
+             ; word-sized operands
+             insn smulwq#sreg
+                  mov ax, q0w
+                  imul q#sreg#w
+                  mov q0, ax
+                  mov q1, dx
+                  update_qbx_flags = 1
+             endinsn
+        }
 
         update_flags_advance:
                 lahf
