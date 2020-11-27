@@ -78,5 +78,69 @@ common
       popwq0, \
       popwq1, \
       popwq2, \
-      popwq3
+      popwq3, \
+      addbq0q0, \
+      addbq0q1, \
+      addbq0q2, \
+      addbq0q3, \
+      addbq1q0, \
+      addbq1q1, \
+      addbq1q2, \
+      addbq1q3, \
+      addbq2q0, \
+      addbq2q1, \
+      addbq2q2, \
+      addbq2q3, \
+      addbq3q0, \
+      addbq3q1, \
+      addbq3q2, \
+      addbq3q3, \
+      addwq0q0, \
+      addwq0q1, \
+      addwq0q2, \
+      addwq0q3, \
+      addwq1q0, \
+      addwq1q1, \
+      addwq1q2, \
+      addwq1q3, \
+      addwq2q0, \
+      addwq2q1, \
+      addwq2q2, \
+      addwq2q3, \
+      addwq3q0, \
+      addwq3q1, \
+      addwq3q2, \
+      addwq3q3, \
+      subbq0q0, \
+      subbq0q1, \
+      subbq0q2, \
+      subbq0q3, \
+      subbq1q0, \
+      subbq1q1, \
+      subbq1q2, \
+      subbq1q3, \
+      subbq2q0, \
+      subbq2q1, \
+      subbq2q2, \
+      subbq2q3, \
+      subbq3q0, \
+      subbq3q1, \
+      subbq3q2, \
+      subbq3q3, \
+      subwq0q0,  \
+      subwq0q1, \
+      subwq0q2, \
+      subwq0q3, \
+      subwq1q0, \
+      subwq1q1, \
+      subwq1q2, \
+      subwq1q3, \
+      subwq2q0, \
+      subwq2q1, \
+      subwq2q2, \
+      subwq2q3, \
+      subwq3q0, \
+      subwq3q1, \
+      subwq3q2, \
+      subwq3q3
 }
