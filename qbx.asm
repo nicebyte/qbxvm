@@ -39,6 +39,8 @@ section '.code' code readable executable
                 add qip, 2                                 ; advance instruction pointer
                 movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table
                 add r10, insn_base                         ; compute address of insn implementation
+                mov rax, qflags                            ; prepare to set flags
+                sahf                                       ; set flags
                 jmp r10                                    ; jump to insn implementation
 
 
@@ -223,7 +225,6 @@ section '.code' code readable executable
 
              \}
         }
-
 
 
         update_flags_advance:
