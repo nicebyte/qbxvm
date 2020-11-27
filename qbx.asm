@@ -188,6 +188,44 @@ section '.code' code readable executable
              endinsn
         }
 
+        ; addition instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized registers
+                  insn addbq\#dreg#q#sreg
+                       add q\#dreg\#b, q#sreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized registers
+                  insn addwq\#dreg#q#sreg
+                       add q\#dreg\#w, q#sreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+        ; subtraction instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized registers
+                  insn subbq\#dreg#q#sreg
+                       sub q\#dreg\#b, q#sreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized registers
+                  insn subwq\#dreg#q#sreg
+                       sub q\#dreg\#w, q#sreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+
+
         update_flags_advance:
                 lahf
                 mov qflags, rax
