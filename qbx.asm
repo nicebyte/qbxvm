@@ -8,33 +8,66 @@ include 'qbx_registers.inc'
 
 ; import tables.
 section '.idata' import readable writeable
-        import_directory_table KERNEL32, USER32
+        import_directory_table KERNEL32, USER32, SHELL32
         import_functions KERNEL32, \
                          AllocConsole, \
                          WriteConsoleOutputA, \
                          GetStdHandle, \
-                         ExitProcess
+                         ExitProcess, \
+                         CreateFileW, \
+                         ReadFile, \
+                         CloseHandle, \
+                         GetCommandLineW
         import_functions USER32, MessageBoxA
+        import_functions SHELL32, CommandLineToArgvW
 
 ; define constants for all QBX instruction codes.
 qbx_insns define_icodes, 0
 
-section '.data' data readable writeable
+section '.data' data readable
+        err_msg_title db "Error", 0
+        file_err_msg db "Failed to open the input file.", 0
+        noinput_err_msg db "Input file name not specified.", 0
+
         ; jump table mapping insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
+
+section '.mem' data readable writeable
         ; QBX memory.
         QBX_MEM_SIZE = 1024
-        qbx_mem file 'input.bin'
-                CODE_SIZE = $ - qbx_mem
-                dw QBX_MEM_SIZE - CODE_SIZE dup ?
+        qbx_mem db QBX_MEM_SIZE dup ?
+        prog_size dw ?
 
 section '.code' code readable executable
         start:               ; entry point - program starts here
                 int3         ; breakpoint for the debugger
+                ; Parse command line to extract the input file name.
+                call64 [GetCommandLineW]
+                call64 [CommandLineToArgvW], rax, prog_size
+                cmp [prog_size], 2
+                jge open_input
+                ; if an input file name is not provided, display error message and exit.
+                call64 [MessageBoxA], 0, noinput_err_msg, err_msg_title, MB_ICONERROR
+                call64 [ExitProcess], 1
+        open_input:
+                ; attempt to open the input file.
+                call64 [CreateFileW], [rax + 8], GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0
+                cmp rax, INVALID_HANDLE
+                jne read_input
+                ; if the input file could not be opened, display error message and exit.
+                call64 [MessageBoxA], 0, file_err_msg, err_msg_title, MB_ICONERROR
+                call64 [ExitProcess], 1
+        read_input:
+                ; read the contents of the file into the qbx memory region.
+                mov r12, rax
+                call64 [ReadFile], r12, qbx_mem, QBX_MEM_SIZE, prog_size, 0
+                call64 [CloseHandle], r12
+        begin_execution:
+                ; prep qbx for execution.
                 xor qip, qip ; zero out instruction pointer
                 xor rdi, rdi ; rdi will hold the next instruction code
                 mov qsp, QBX_MEM_SIZE - 1 ; initialize the stack pointer
-        advance:
+        advance: ; main qbx loop.
                 mov di, word [qbx_mem + qip]               ; read the next instruction
                 add qip, 2                                 ; advance instruction pointer
                 movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table
