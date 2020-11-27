@@ -23,6 +23,7 @@ qspb equ bl
 
 ; insn ptr
 qip equ rsi
+qipw equ si
 
 ; flags
 qflags equ r11

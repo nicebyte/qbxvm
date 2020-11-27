@@ -1,4 +1,5 @@
 format PE64 NX GUI 6.0
+
 entry start
 
 include 'win64_helpers.inc'
@@ -15,7 +16,9 @@ section '.idata' import readable writeable
                          GetStdHandle, \
                          ExitProcess, \
                          CreateFileW, \
+                         CreateFileA, \
                          ReadFile, \
+                         WriteFile, \
                          CloseHandle, \
                          GetCommandLineW
         import_functions USER32, MessageBoxA
@@ -28,6 +31,8 @@ section '.data' data readable
         err_msg_title db "Error", 0
         file_err_msg db "Failed to open the input file.", 0
         noinput_err_msg db "Input file name not specified.", 0
+        dump_err_msg db "Failed to open dump file for writing.",0
+        dump_file_name db "qbx_dump.bin", 0
 
         ; jump table mapping insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
@@ -35,16 +40,21 @@ section '.data' data readable
 section '.mem' data readable writeable
         ; QBX memory.
         QBX_MEM_SIZE = 1024
-        qbx_mem db QBX_MEM_SIZE dup ?
+        qbx_mem db QBX_MEM_SIZE dup 0
+        num_args  dw ?
+        args_ptr  dq ?
         prog_size dw ?
 
 section '.code' code readable executable
         start:               ; entry point - program starts here
-                int3         ; breakpoint for the debugger
-                ; Parse command line to extract the input file name.
+                if defined(QBX_BUILD_MODE_DEBUG)
+                   int3         ; breakpoint for the debugger
+                end if
+                ; parse the command line to extract the input file name.
                 call64 [GetCommandLineW]
-                call64 [CommandLineToArgvW], rax, prog_size
-                cmp [prog_size], 2
+                call64 [CommandLineToArgvW], rax, num_args
+                mov [args_ptr], rax
+                cmp [num_args], 2
                 jge open_input
                 ; if an input file name is not provided, display error message and exit.
                 call64 [MessageBoxA], 0, noinput_err_msg, err_msg_title, MB_ICONERROR
@@ -86,6 +96,37 @@ section '.code' code readable executable
 
         ; stop execution.
         insn halt
+             ; check if state dump was requested.
+             cmp [args_ptr], 3
+             jl quit
+             mov r10, [args_ptr]
+             mov rdx, qword [r10 + 16]
+             cmp byte [rdx], 'd'
+             jne quit
+             ; dump memory and registers to a file.
+             call64 [CreateFileA], dump_file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0
+             cmp rax, INVALID_HANDLE
+             jne dump
+             call64 [MessageBoxA], 0, err_msg_title, dump_err_msg, MB_ICONERROR
+             call64 [ExitProcess], 1
+        dump:
+             push rax
+             ; first, write all memory to the file.
+             call64 [WriteFile], rax, qbx_mem, QBX_MEM_SIZE, prog_size, 0
+             pop rax
+             ; next, dump registers
+             mov word  [qbx_mem + 0], q0
+             mov word  [qbx_mem + 2], q1
+             mov word  [qbx_mem + 4], q2
+             mov word  [qbx_mem + 6], q3
+             mov word  [qbx_mem + 8], qipw
+             mov word  [qbx_mem + 10], qspw
+             mov qword [qbx_mem + 12], qflags
+             push rax
+             call64 [WriteFile], rax, qbx_mem, 20, prog_size, 0
+             pop rax
+             call64 [CloseHandle], rax
+        quit:
              call64 [ExitProcess], 0
         endinsn
 
