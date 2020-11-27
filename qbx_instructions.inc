@@ -127,7 +127,7 @@ common
       subbq3q1, \
       subbq3q2, \
       subbq3q3, \
-      subwq0q0,  \
+      subwq0q0, \
       subwq0q1, \
       subwq0q2, \
       subwq0q3, \
@@ -150,7 +150,7 @@ common
       smulbq2,  \
       smulbq3,  \
       smulwq2,  \
-      smulwq3, \
+      smulwq3,  \
       divbq2,   \
       divbq3,   \
       divwq2,   \
@@ -158,5 +158,77 @@ common
       sdivbq2,  \
       sdivbq3,  \
       sdivwq2,  \
-      sdivwq3
+      sdivwq3,  \
+      andbq0q0, \
+      andbq0q1, \
+      andbq0q2, \
+      andbq0q3, \
+      andbq1q0, \
+      andbq1q1, \
+      andbq1q2, \
+      andbq1q3, \
+      andbq2q0, \
+      andbq2q1, \
+      andbq2q2, \
+      andbq2q3, \
+      andbq3q0, \
+      andbq3q1, \
+      andbq3q2, \
+      andbq3q3, \
+      andwq0q0, \
+      andwq0q1, \
+      andwq0q2, \
+      andwq0q3, \
+      andwq1q0, \
+      andwq1q1, \
+      andwq1q2, \
+      andwq1q3, \
+      andwq2q0, \
+      andwq2q1, \
+      andwq2q2, \
+      andwq2q3, \
+      andwq3q0, \
+      andwq3q1, \
+      andwq3q2, \
+      andwq3q3, \
+      orbq0q0, \
+      orbq0q1, \
+      orbq0q2, \
+      orbq0q3, \
+      orbq1q0, \
+      orbq1q1, \
+      orbq1q2, \
+      orbq1q3, \
+      orbq2q0, \
+      orbq2q1, \
+      orbq2q2, \
+      orbq2q3, \
+      orbq3q0, \
+      orbq3q1, \
+      orbq3q2, \
+      orbq3q3, \
+      orwq0q0, \
+      orwq0q1, \
+      orwq0q2, \
+      orwq0q3, \
+      orwq1q0, \
+      orwq1q1, \
+      orwq1q2, \
+      orwq1q3, \
+      orwq2q0, \
+      orwq2q1, \
+      orwq2q2, \
+      orwq2q3, \
+      orwq3q0, \
+      orwq3q1, \
+      orwq3q2, \
+      orwq3q3, \
+      notbq0,  \
+      notbq1,  \
+      notbq2,  \
+      notbq3,  \
+      notwq0,  \
+      notwq1,  \
+      notwq2,  \
+      notwq3
 }

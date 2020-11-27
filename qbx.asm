@@ -308,6 +308,59 @@ section '.code' code readable executable
              endinsn
         }
 
+
+        ; bitwise and instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized operands
+                  insn andbq\#dreg\#q#sreg
+                       and q\#dreg\#b, q#sreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn andwq\#dreg\#q#sreg
+                       and q\#dreg\#w, q#sreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+        ; bitwise or instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized operands
+                  insn orbq\#dreg\#q#sreg
+                       or q\#dreg\#b, q#sreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn orwq\#dreg\#q#sreg
+                       or q\#dreg\#w, q#sreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+        ; bitwise not instructions
+        rept 4 dreg:0 {
+                  ; byte-sized operands
+                  insn notbq#dreg
+                       not q#dreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn notwq#dreg
+                       not q#dreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+        }
+
         update_flags_advance:
                 lahf
                 mov qflags, rax
