@@ -142,5 +142,21 @@ common
       subwq3q0, \
       subwq3q1, \
       subwq3q2, \
-      subwq3q3
+      subwq3q3, \
+      mulbq2,   \
+      mulbq3,   \
+      mulwq2,   \
+      mulwq3,   \
+      smulbq2,  \
+      smulbq3,  \
+      smulwq2,  \
+      smulwq3, \
+      divbq2,   \
+      divbq3,   \
+      divwq2,   \
+      divwq3,   \
+      sdivbq2,  \
+      sdivbq3,  \
+      sdivwq2,  \
+      sdivwq3
 }

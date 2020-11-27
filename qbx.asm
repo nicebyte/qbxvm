@@ -266,6 +266,48 @@ section '.code' code readable executable
              endinsn
         }
 
+        ; unsigned division
+        rept 2 sreg:2 {
+             ; byte-sized operands
+             insn divbq#sreg
+                  mov ax, q0w
+                  div q#sreg#b
+                  mov q0, ax
+                  update_qbx_flags = 1
+             endinsn
+
+             ; word-sized operands
+             insn divwq#sreg
+                  mov dx, q1w
+                  mov ax, q0w
+                  div q#sreg#w
+                  mov q0, ax
+                  mov q1, dx
+                  update_qbx_flags = 1
+             endinsn
+        }
+
+        ; signed division
+        rept 2 sreg:2 {
+             ; byte-sized operands
+             insn sdivbq#sreg
+                  mov ax, q0w
+                  idiv q#sreg#b
+                  mov q0, ax
+                  update_qbx_flags = 1
+             endinsn
+
+             ; word-sized operands
+             insn sdivwq#sreg
+                  mov dx, q1w
+                  mov ax, q0w
+                  idiv q#sreg#w
+                  mov q0, ax
+                  mov q1, dx
+                  update_qbx_flags = 1
+             endinsn
+        }
+
         update_flags_advance:
                 lahf
                 mov qflags, rax
