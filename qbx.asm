@@ -1,5 +1,7 @@
 format PE64 NX GUI 6.0
 
+QBX_BUILD_MODE_DEBUG = 1
+
 entry start
 
 include 'win64_helpers.inc'
@@ -12,15 +14,21 @@ section '.idata' import readable writeable
         import_directory_table KERNEL32, USER32, SHELL32
         import_functions KERNEL32, \
                          AllocConsole, \
+                         CreateConsoleScreenBuffer, \
+                         SetConsoleActiveScreenBuffer, \
+                         SetConsoleTitleA, \
+                         SetConsoleScreenBufferSize, \
+                         SetConsoleCursorInfo, \
                          WriteConsoleOutputA, \
-                         GetStdHandle, \
                          ExitProcess, \
                          CreateFileW, \
                          CreateFileA, \
                          ReadFile, \
                          WriteFile, \
                          CloseHandle, \
-                         GetCommandLineW
+                         GetCommandLineW, \
+                         GetLastError
+
         import_functions USER32, MessageBoxA
         import_functions SHELL32, CommandLineToArgvW
 
@@ -33,17 +41,25 @@ section '.data' data readable
         noinput_err_msg db "Input file name not specified.", 0
         dump_err_msg db "Failed to open dump file for writing.",0
         dump_file_name db "qbx_dump.bin", 0
-
-        ; jump table mapping insn codes to insn implementations.
+        window_title db "QBX Bytecode Xecutor", 0
+        ; jump table that maps insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
 
 section '.mem' data readable writeable
         ; QBX memory.
         QBX_MEM_SIZE = 1024
-        qbx_mem db QBX_MEM_SIZE dup 0
+        qbx_mem db QBX_MEM_SIZE dup ?
+        SCR_CHAR_WIDTH  equ 80
+        SCR_CHAR_HEIGHT equ 25
+        screen dd SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT dup 0
+        screen_rect  dd 0
+                     dw SCR_CHAR_WIDTH
+                     dw SCR_CHAR_HEIGHT
+        con_bbuf dq ?
+        con_fbuf dq ?
         num_args  dw ?
         args_ptr  dq ?
-        prog_size dw ?
+        prog_size dq ?
 
 section '.code' code readable executable
         start:               ; entry point - program starts here
@@ -60,24 +76,44 @@ section '.code' code readable executable
                 call64 [MessageBoxA], 0, noinput_err_msg, err_msg_title, MB_ICONERROR
                 call64 [ExitProcess], 1
         open_input:
-                ; attempt to open the input file.
+                ; attempt to open the image file.
                 call64 [CreateFileW], [rax + 8], GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0
                 cmp rax, INVALID_HANDLE
                 jne read_input
-                ; if the input file could not be opened, display error message and exit.
+                ; if the image could not be opened, display error message and exit.
                 call64 [MessageBoxA], 0, file_err_msg, err_msg_title, MB_ICONERROR
                 call64 [ExitProcess], 1
         read_input:
-                ; read the contents of the file into the qbx memory region.
+                ; read the contents of the image into the qbx memory region.
                 mov r12, rax
                 call64 [ReadFile], r12, qbx_mem, QBX_MEM_SIZE, prog_size, 0
                 call64 [CloseHandle], r12
+        setup_console:
+                ; allocate console, front and back screen buffers.
+                call64 [AllocConsole]
+                call64 [CreateConsoleScreenBuffer], GENERIC_WRITE, 0, 0, 1, 0
+                mov [con_bbuf], rax
+                call64 [CreateConsoleScreenBuffer], GENERIC_WRITE, 0, 0, 1, 0
+                mov [con_fbuf], rax
+                ; set up screen buffers.
+                call64 [SetConsoleScreenBufferSize], [con_bbuf], ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT)
+                call64 [SetConsoleScreenBufferSize], [con_fbuf], ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT)
+                call64 [SetConsoleCursorInfo], [con_bbuf], empty_cursor_info
+                call64 [SetConsoleCursorInfo], [con_fbuf], empty_cursor_info
+                ; set console title.
+                call64 [SetConsoleTitleA], window_title
         begin_execution:
                 ; prep qbx for execution.
                 xor qip, qip ; zero out instruction pointer
                 xor rdi, rdi ; rdi will hold the next instruction code
                 mov qsp, QBX_MEM_SIZE - 1 ; initialize the stack pointer
         advance: ; main qbx loop.
+                call64 [WriteConsoleOutputA], [con_bbuf], screen, ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT), 0, screen_rect
+                call64 [SetConsoleActiveScreenBuffer], [con_bbuf]
+                mov r10, [con_bbuf]
+                mov r11, [con_fbuf]
+                mov [con_bbuf], r11
+                mov [con_fbuf], r10
                 mov di, word [qbx_mem + qip]               ; read the next instruction
                 add qip, 2                                 ; advance instruction pointer
                 movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table
@@ -85,9 +121,9 @@ section '.code' code readable executable
                 mov rax, qflags                            ; prepare to set flags
                 sahf                                       ; set flags
                 jmp r10                                    ; jump to insn implementation
+        empty_cursor_info dd 1, 0
 
-
-        insn_base:   ; implementations of QBX instructions.
+        insn_base:   ; implementations of qbx instructions.
 
         ; do nothing.
         insn noop
