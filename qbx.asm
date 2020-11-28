@@ -5,7 +5,7 @@ QBX_BUILD_MODE_DEBUG = 1
 entry start
 
 include 'win64_helpers.asm'
-include 'qbx_instructions.asm'
+include 'qbx_insn_list.asm'
 include 'qbx_insn_helpers.asm'
 include 'qbx_registers.asm'
 
