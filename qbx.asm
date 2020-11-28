@@ -4,10 +4,10 @@ QBX_BUILD_MODE_DEBUG = 1
 
 entry start
 
-include 'win64_helpers.inc'
-include 'qbx_instructions.inc'
-include 'qbx_insn_helpers.inc'
-include 'qbx_registers.inc'
+include 'win64_helpers.asm'
+include 'qbx_instructions.asm'
+include 'qbx_insn_helpers.asm'
+include 'qbx_registers.asm'
 
 ; import tables.
 section '.idata' import readable writeable
