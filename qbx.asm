@@ -28,14 +28,13 @@ section '.idata' import readable writeable
                          CloseHandle, \
                          GetCommandLineW, \
                          GetLastError
-
         import_functions USER32, MessageBoxA
         import_functions SHELL32, CommandLineToArgvW
 
 ; define constants for all QBX instruction codes.
 qbx_insns define_icodes, 0
 
-section '.data' data readable
+section '.strings' data readable
         err_msg_title db "Error", 0
         file_err_msg db "Failed to open the input file.", 0
         noinput_err_msg db "Input file name not specified.", 0
@@ -45,13 +44,16 @@ section '.data' data readable
         ; jump table that maps insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
 
+SCR_CHAR_WIDTH  equ 80
+SCR_CHAR_HEIGHT equ 25
+
 section '.mem' data readable writeable
         ; QBX memory.
         QBX_MEM_SIZE = 1024
         qbx_mem db QBX_MEM_SIZE dup ?
-        SCR_CHAR_WIDTH  equ 80
-        SCR_CHAR_HEIGHT equ 25
-        screen dd SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT dup 0
+        screen dd SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT dup ?
+
+section '.vars' data readable writeable
         screen_rect  dd 0
                      dw SCR_CHAR_WIDTH
                      dw SCR_CHAR_HEIGHT
