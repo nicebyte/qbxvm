@@ -46,6 +46,7 @@ section '.strings' data readable
 
 SCR_CHAR_WIDTH  equ 80
 SCR_CHAR_HEIGHT equ 25
+SCR_MEM_SIZE = SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT * 4
 
 section '.mem' data readable writeable
         ; QBX memory.
@@ -150,7 +151,7 @@ section '.code' code readable executable
         dump:
              push rax
              ; first, write all memory to the file.
-             call64 [WriteFile], rax, qbx_mem, QBX_MEM_SIZE, prog_size, 0
+             call64 [WriteFile], rax, qbx_mem, QBX_MEM_SIZE + SCR_MEM_SIZE, prog_size, 0
              pop rax
              ; next, dump registers
              mov word  [qbx_mem + 0], q0
