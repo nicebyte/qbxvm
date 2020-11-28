@@ -35,12 +35,12 @@ section '.idata' import readable writeable
 qbx_insns define_icodes, 0
 
 section '.strings' data readable
-        err_msg_title db "Error", 0
-        file_err_msg db "Failed to open the input file.", 0
+        err_msg_title   db "Error", 0
+        file_err_msg    db "Failed to open the input file.", 0
         noinput_err_msg db "Input file name not specified.", 0
-        dump_err_msg db "Failed to open dump file for writing.",0
-        dump_file_name db "qbx_dump.bin", 0
-        window_title db "QBX Bytecode Xecutor", 0
+        dump_err_msg    db "Failed to open dump file for writing.",0
+        dump_file_name  db "qbx_dump.bin", 0
+        window_title    db "QBX Bytecode Xecutor", 0
         ; jump table that maps insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
 
@@ -472,6 +472,24 @@ section '.code' code readable executable
                        update_qbx_flags = 1
                   endinsn
 
+        }
+
+        ; bitwise xor instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized operands
+                  insn xorbq\#dreg\#q#sreg
+                       xor q\#dreg\#b, q#sreg#b
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn xorwq\#dreg\#q#sreg
+                       xor q\#dreg\#w, q#sreg#w
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
         }
 
         update_flags_advance:

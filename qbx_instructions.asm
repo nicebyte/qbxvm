@@ -230,5 +230,37 @@ common
       notwq0,  \
       notwq1,  \
       notwq2,  \
-      notwq3
+      notwq3,  \
+      xorbq0q0, \
+      xorbq0q1, \
+      xorbq0q2, \
+      xorbq0q3, \
+      xorbq1q0, \
+      xorbq1q1, \
+      xorbq1q2, \
+      xorbq1q3, \
+      xorbq2q0, \
+      xorbq2q1, \
+      xorbq2q2, \
+      xorbq2q3, \
+      xorbq3q0, \
+      xorbq3q1, \
+      xorbq3q2, \
+      xorbq3q3, \
+      xorwq0q0, \
+      xorwq0q1, \
+      xorwq0q2, \
+      xorwq0q3, \
+      xorwq1q0, \
+      xorwq1q1, \
+      xorwq1q2, \
+      xorwq1q3, \
+      xorwq2q0, \
+      xorwq2q1, \
+      xorwq2q2, \
+      xorwq2q3, \
+      xorwq3q0, \
+      xorwq3q1, \
+      xorwq3q2, \
+      xorwq3q3
 }
