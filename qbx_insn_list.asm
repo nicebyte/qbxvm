@@ -1,16 +1,16 @@
 macro qbx_insns m, [arg*] {
 common
-      m arg, \
-      noop,  \
-      halt,  \
-      moviwq0, \
-      moviwq1, \
-      moviwq2, \
-      moviwq3, \
-      movibq0, \
-      movibq1, \
-      movibq2, \
-      movibq3, \
+      m arg,    \
+      noop,     \
+      halt,     \
+      moviwq0,  \
+      moviwq1,  \
+      moviwq2,  \
+      moviwq3,  \
+      movibq0,  \
+      movibq1,  \
+      movibq2,  \
+      movibq3,  \
       movwq0q1, \
       movwq0q2, \
       movwq0q3, \
@@ -191,46 +191,46 @@ common
       andwq3q1, \
       andwq3q2, \
       andwq3q3, \
-      orbq0q0, \
-      orbq0q1, \
-      orbq0q2, \
-      orbq0q3, \
-      orbq1q0, \
-      orbq1q1, \
-      orbq1q2, \
-      orbq1q3, \
-      orbq2q0, \
-      orbq2q1, \
-      orbq2q2, \
-      orbq2q3, \
-      orbq3q0, \
-      orbq3q1, \
-      orbq3q2, \
-      orbq3q3, \
-      orwq0q0, \
-      orwq0q1, \
-      orwq0q2, \
-      orwq0q3, \
-      orwq1q0, \
-      orwq1q1, \
-      orwq1q2, \
-      orwq1q3, \
-      orwq2q0, \
-      orwq2q1, \
-      orwq2q2, \
-      orwq2q3, \
-      orwq3q0, \
-      orwq3q1, \
-      orwq3q2, \
-      orwq3q3, \
-      notbq0,  \
-      notbq1,  \
-      notbq2,  \
-      notbq3,  \
-      notwq0,  \
-      notwq1,  \
-      notwq2,  \
-      notwq3,  \
+      orbq0q0,  \
+      orbq0q1,  \
+      orbq0q2,  \
+      orbq0q3,  \
+      orbq1q0,  \
+      orbq1q1,  \
+      orbq1q2,  \
+      orbq1q3,  \
+      orbq2q0,  \
+      orbq2q1,  \
+      orbq2q2,  \
+      orbq2q3,  \
+      orbq3q0,  \
+      orbq3q1,  \
+      orbq3q2,  \
+      orbq3q3,  \
+      orwq0q0,  \
+      orwq0q1,  \
+      orwq0q2,  \
+      orwq0q3,  \
+      orwq1q0,  \
+      orwq1q1,  \
+      orwq1q2,  \
+      orwq1q3,  \
+      orwq2q0,  \
+      orwq2q1,  \
+      orwq2q2,  \
+      orwq2q3,  \
+      orwq3q0,  \
+      orwq3q1,  \
+      orwq3q2,  \
+      orwq3q3,  \
+      notbq0,   \
+      notbq1,   \
+      notbq2,   \
+      notbq3,   \
+      notwq0,   \
+      notwq1,   \
+      notwq2,   \
+      notwq3,   \
       xorbq0q0, \
       xorbq0q1, \
       xorbq0q2, \
@@ -262,5 +262,39 @@ common
       xorwq3q0, \
       xorwq3q1, \
       xorwq3q2, \
-      xorwq3q3
+      xorwq3q3, \
+      jmpq0,    \
+      jmpq1,    \
+      jmpq2,    \
+      jmpq3,    \
+      jmpi,     \
+      jzq0,     \
+      jzq1,     \
+      jzq2,     \
+      jzq3,     \
+      jnzq0,    \
+      jnzq1,    \
+      jnzq2,    \
+      jznq3,    \
+      jaq0,     \
+      jaq1,     \
+      jaq2,     \
+      jaq3,     \
+      jbq0,     \
+      jbq1,     \
+      jbq2,     \
+      jbq3,     \
+      jgq0,     \
+      jgq1,     \
+      jgq2,     \
+      jgq3,     \
+      jlq0,     \
+      jlq1,     \
+      jlq2,     \
+      jlq3,     \
+      callq0,   \
+      callq1,   \
+      callq2,   \
+      callq3,   \
+      return
 }
