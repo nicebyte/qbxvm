@@ -132,3 +132,13 @@ CREATE_ALWAYS      equ  2
 INVALID_HANDLE     equ -1
 STD_OUTPUT_HANDLE  equ -11
 STD_INPUT_HANDLE   equ -10
+
+
+; Some WIN32 API structures
+
+struc SMALL_RECT {
+      .Left   dw ?
+      .Top    dw ?
+      .Right  dw ?
+      .Bottom dw ?
+}
