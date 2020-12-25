@@ -1,6 +1,6 @@
 format PE64 NX GUI 6.0
 
-QBX_BUILD_MODE_DEBUG = 1
+;QBX_BUILD_MODE_DEBUG = 1
 
 entry start
 
@@ -9,8 +9,16 @@ include 'qbx_insn_list.asm'
 include 'qbx_insn_helpers.asm'
 include 'qbx_registers.asm'
 
-; import tables.
-section '.idata' import readable writeable
+; define constants for all QBX instruction codes.
+qbx_insns define_icodes, 0
+
+; screen dimension constants.
+SCR_CHAR_WIDTH  equ 80
+SCR_CHAR_HEIGHT equ 25
+
+; this data section contains import tables and some
+; other global data structures that qbx uses.
+section '.data' import readable writeable executable
         import_directory_table KERNEL32, USER32, SHELL32
         import_functions KERNEL32, \
                          AllocConsole, \
@@ -27,69 +35,70 @@ section '.idata' import readable writeable
                          WriteFile, \
                          CloseHandle, \
                          GetCommandLineW, \
-                         GetLastError
+                         GetLastError, \
+                         Sleep, \
+                         GetFileSize
         import_functions USER32, MessageBoxA
         import_functions SHELL32, CommandLineToArgvW
-
-; define constants for all QBX instruction codes.
-qbx_insns define_icodes, 0
-
-section '.strings' data readable
+        ; string constants.
         err_msg_title   db "Error", 0
         file_err_msg    db "Failed to open the input file.", 0
+        size_err_msg    db "Image too big to fit in QBX memory.", 0
         noinput_err_msg db "Input file name not specified.", 0
         dump_err_msg    db "Failed to open dump file for writing.",0
-        dump_file_name  db "qbx_dump.bin", 0
+        dump_file_name  db "qbx.dump", 0
         window_title    db "QBX Bytecode Xecutor", 0
-        ; jump table that maps insn codes to insn implementations.
+        ; the jump table that maps insn codes to insn implementations.
         qbx_insns define_jmp_table, qbx_jmp_table
+        ; some variables.
+        screen_rect SMALL_RECT ; defines target rect for screen updates.
+        con_bbuf    dq ?       ; console back buffer handle.
+        con_fbuf    dq ?       ; console front buffer handle.
+        num_args    dw ?       ; stores the number of command line arguments.
+        args_ptr    dq ?       ; pointer to the command line argument string.
+        tmp_space   dq ?       ; temporary space for miscellaneous small data.
 
-SCR_CHAR_WIDTH  equ 80
-SCR_CHAR_HEIGHT equ 25
-SCR_MEM_SIZE = SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT * 4
-
+; this section contains the memory seen by programs executed by qbx.
+; splitting it into a separate section reduces the final executable size.
 section '.mem' data readable writeable
-        ; QBX memory.
-        QBX_MEM_SIZE = 1024
+        QBX_MEM_SIZE = 1024 * 16  ; 16 K
         qbx_mem db QBX_MEM_SIZE dup ?
-        screen dd SCR_CHAR_WIDTH * SCR_CHAR_HEIGHT dup ?
 
-section '.vars' data readable writeable
-        screen_rect  dd 0
-                     dw SCR_CHAR_WIDTH
-                     dw SCR_CHAR_HEIGHT
-        con_bbuf dq ?
-        con_fbuf dq ?
-        num_args  dw ?
-        args_ptr  dq ?
-        prog_size dq ?
-
+; all executable code lives in this section.
 section '.code' code readable executable
-        start:               ; entry point - program starts here
-                if defined(QBX_BUILD_MODE_DEBUG)
-                   int3         ; breakpoint for the debugger
-                end if
+        start:  ; entry point - program starts here.
                 ; parse the command line to extract the input file name.
                 call64 [GetCommandLineW]
                 call64 [CommandLineToArgvW], rax, num_args
                 mov [args_ptr], rax
                 cmp [num_args], 2
                 jge open_input
-                ; if an input file name is not provided, display error message and exit.
+                ; if an input file name is not provided, display an error message and exit.
                 call64 [MessageBoxA], 0, noinput_err_msg, err_msg_title, MB_ICONERROR
                 call64 [ExitProcess], 1
         open_input:
                 ; attempt to open the image file.
                 call64 [CreateFileW], [rax + 8], GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0
                 cmp rax, INVALID_HANDLE
-                jne read_input
+                jne check_size
                 ; if the image could not be opened, display error message and exit.
                 call64 [MessageBoxA], 0, file_err_msg, err_msg_title, MB_ICONERROR
                 call64 [ExitProcess], 1
+        check_size:
+                ; check that the input file is small enough to fit into qbx memory.
+                mov r12, rax
+                call64 [GetFileSize], r12, tmp_space
+                cmp [tmp_space], 0
+                jnz file_size_error
+                cmp rax, QBX_MEM_SIZE
+                jl read_input
+        file_size_error:
+                ; exit if requested image is too large.
+                call64 [MessageBoxA], 0, size_err_msg, err_msg_title, MB_ICONERROR
+                call64 [ExitProcess], 1
         read_input:
                 ; read the contents of the image into the qbx memory region.
-                mov r12, rax
-                call64 [ReadFile], r12, qbx_mem, QBX_MEM_SIZE, prog_size, 0
+                call64 [ReadFile], r12, qbx_mem, QBX_MEM_SIZE, tmp_space, 0
                 call64 [CloseHandle], r12
         setup_console:
                 ; allocate console, front and back screen buffers.
@@ -99,32 +108,39 @@ section '.code' code readable executable
                 call64 [CreateConsoleScreenBuffer], GENERIC_WRITE, 0, 0, 1, 0
                 mov [con_fbuf], rax
                 ; set up screen buffers.
-                call64 [SetConsoleScreenBufferSize], [con_bbuf], ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT)
-                call64 [SetConsoleScreenBufferSize], [con_fbuf], ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT)
+                call64 [SetConsoleScreenBufferSize], [con_bbuf], ((SCR_CHAR_HEIGHT shl 16) or SCR_CHAR_WIDTH)
+                call64 [SetConsoleScreenBufferSize], [con_fbuf], ((SCR_CHAR_HEIGHT shl 16) or SCR_CHAR_WIDTH)
+                jmp set_cursor_info
+                empty_cursor_info dq 0x01
+                set_cursor_info:
                 call64 [SetConsoleCursorInfo], [con_bbuf], empty_cursor_info
                 call64 [SetConsoleCursorInfo], [con_fbuf], empty_cursor_info
                 ; set console title.
                 call64 [SetConsoleTitleA], window_title
         begin_execution:
                 ; prep qbx for execution.
-                xor qip, qip ; zero out instruction pointer
-                xor rdi, rdi ; rdi will hold the next instruction code
+                xor q0, q0
+                xor q1, q1
+                xor q2, q2
+                xor q3, q3
+                xor qip, qip
+                xor rdi, rdi
                 mov qsp, QBX_MEM_SIZE - 1 ; initialize the stack pointer
+                mov word [screen_rect.Left], 0
+                mov word [screen_rect.Top], 0
+                mov word [screen_rect.Right], SCR_CHAR_WIDTH
+                mov word [screen_rect.Bottom], SCR_CHAR_HEIGHT
+                if defined(QBX_BUILD_MODE_DEBUG)
+                   int3         ; breakpoint for the debugger
+                end if
         advance: ; main qbx loop.
-                call64 [WriteConsoleOutputA], [con_bbuf], screen, ((SCR_CHAR_WIDTH shl 16) + SCR_CHAR_HEIGHT), 0, screen_rect
-                call64 [SetConsoleActiveScreenBuffer], [con_bbuf]
-                mov r10, [con_bbuf]
-                mov r11, [con_fbuf]
-                mov [con_bbuf], r11
-                mov [con_fbuf], r10
-                mov di, word [qbx_mem + qip]               ; read the next instruction
-                add qip, 2                                 ; advance instruction pointer
-                movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table
-                add r10, insn_base                         ; compute address of insn implementation
-                mov rax, qflags                            ; prepare to set flags
-                sahf                                       ; set flags
-                jmp r10                                    ; jump to insn implementation
-        empty_cursor_info dd 1, 0
+                mov di, word [qbx_mem + qip]               ; read the next instruction.
+                add qip, 2                                 ; advance instruction pointer.
+                movzx r10, word [qbx_jmp_table + rdi * 2]  ; read offset from jump table.
+                add r10, insn_base                         ; compute address of insn implementation.
+                mov rax, qflags                            ; prepare to set flags.
+                sahf                                       ; set flags.
+                jmp r10                                    ; jump to insn implementation.
 
         insn_base:   ; implementations of qbx instructions.
 
@@ -146,78 +162,73 @@ section '.code' code readable executable
              call64 [CreateFileA], dump_file_name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0
              cmp rax, INVALID_HANDLE
              jne dump
+             ; couldn't open dump file for writing, report error and exit.
              call64 [MessageBoxA], 0, err_msg_title, dump_err_msg, MB_ICONERROR
              call64 [ExitProcess], 1
         dump:
              push rax
              ; first, write all memory to the file.
-             call64 [WriteFile], rax, qbx_mem, QBX_MEM_SIZE + SCR_MEM_SIZE, prog_size, 0
+             call64 [WriteFile], rax, qbx_mem, QBX_MEM_SIZE, tmp_space, 0
              pop rax
              ; next, dump registers
-             mov word  [qbx_mem + 0], q0
-             mov word  [qbx_mem + 2], q1
-             mov word  [qbx_mem + 4], q2
-             mov word  [qbx_mem + 6], q3
-             mov word  [qbx_mem + 8], qipw
-             mov word  [qbx_mem + 10], qspw
-             mov qword [qbx_mem + 12], qflags
+             mov word [qbx_mem + 0],  q0
+             mov word [qbx_mem + 2],  q1
+             mov word [qbx_mem + 4],  q2
+             mov word [qbx_mem + 6],  q3
+             mov word [qbx_mem + 8],  qipw
+             mov word [qbx_mem + 10], qspw
+             mov word [qbx_mem + 12], qflagsw
              push rax
-             call64 [WriteFile], rax, qbx_mem, 20, prog_size, 0
+             call64 [WriteFile], rax, qbx_mem, 13, tmp_space, 0
              pop rax
              call64 [CloseHandle], rax
         quit:
              call64 [ExitProcess], 0
         endinsn
 
-        ; move immediate word-sized value into register.
+        ; move immediate value into register.
          rept 4 reg:0 {
+              ; word-sized operands.
               insn moviwq#reg
                    mov q#reg, word [qbx_mem + qip]
                    add qip, 2
               endinsn
-        }
 
-        ; move immediate byte-sized value into register.
-         rept 4 reg:0 {
+              ; byte-sized operands.
               insn movibq#reg
                    mov q#reg#b, byte [qbx_mem + qip]
                    add qip, 1
               endinsn
         }
 
-        ; move word-sized value between registers.
+        ; move value between registers.
         rept 4 tgt:0 {
              rept 4 src:0 \{
-                  if ~(tgt eq \src)
+                  if ~(tgt eq \src) ; src and dst must be different.
+                       ; word-sized operands.
                        insn movwq#tgt#q\#src
                             mov q#tgt, q\#src
                        endinsn
-                  end if
-             \}
-        }
 
-        ; move byte-sized value between registers.
-        rept 4 tgt:0 {
-             rept 4 src:0 \{
-                  if ~(tgt eq \src)
+                       ; byte-sized operands.
                        insn movbq#tgt#q\#src
                             mov q#tgt#b, q\#src\#b
                        endinsn
+
                   end if
              \}
         }
 
-        ; store word-sized value to direct address.
+        ; store value to direct address.
         rept 4 reg:0 {
+             ; word-sized operand.
              insn storwdq#reg
                 movzx rcx, word [qbx_mem + qip]
                 add qip, 2
                 mov word [qbx_mem +  rcx], q#reg
              endinsn
-        }
 
-        ; store byte-sized value to direct address.
-        rept 4 reg:0 {
+             ; byte-sized operand.
              insn storbdq#reg
                 movzx rcx, word [qbx_mem + qip]
                 add qip, 2
@@ -225,62 +236,56 @@ section '.code' code readable executable
              endinsn
         }
 
-        ; store word-sized value to address in q0.
+        ; store value to address in q0.
         rept 3 reg {
+             ; word-sized operand.
              insn storwiq#reg
                 mov word [qbx_mem + qaddr], q#reg
              endinsn
-        }
 
-        ; store byte-sized value to address in q0.
-        rept 3 reg {
+             ; byte-sized operand.
              insn storbiq#reg
                 mov byte [qbx_mem + qaddr], q#reg#b
              endinsn
         }
 
-        ; load word-sized value from direct address.
+        ; load value from direct address.
         rept 4 reg:0 {
+             ; word-sized operand.
              insn loadwdq#reg
                 movzx rcx, word [qbx_mem + qip]
                 add qip, 2
                 mov q#reg, word [qbx_mem +  rcx]
              endinsn
-        }
 
-        ; load byte-sized value from direct address.
-        rept 4 reg:0 {
+             ; byte-sized operand.
              insn loadbdq#reg
                 movzx rcx, word [qbx_mem + qip]
                 add qip, 2
                 mov q#reg#b, byte [qbx_mem +  rcx]
              endinsn
+
         }
 
-        ; load word-sized value from address in q0.
+        ; load value from address in q0.
         rept 3 reg {
              insn loadwiq#reg
                 mov q#reg, word [qbx_mem + qaddr]
              endinsn
-        }
 
-        ; load byte-sized value from address in q0.
-        rept 3 reg {
              insn loadbiq#reg
                 mov q#reg#b, byte [qbx_mem + qaddr]
              endinsn
+
         }
 
-        ; push word-sized value onto the stack
+        ; push value onto the stack
         rept 4 reg:0 {
              insn pushwq#reg
                   sub qsp, 2
                   mov word [qbx_mem + qsp + 1], q#reg
              endinsn
-        }
 
-        ; push byte-sized value onto the stack
-        rept 4 reg:0 {
              insn pushbq#reg
                   sub qsp, 1
                   mov byte [qbx_mem + qsp + 1], q#reg#b
@@ -293,10 +298,7 @@ section '.code' code readable executable
                 mov q#reg, word [qbx_mem + qsp + 1]
                 add qsp, 2
              endinsn
-        }
 
-        ; pop byte-sized value from the stack.
-        rept 4 reg:0 {
              insn popbq#reg
                 mov q#reg#b, byte [qbx_mem + qsp + 1]
                 add qsp, 1
@@ -343,6 +345,7 @@ section '.code' code readable executable
         rept 2 sreg:2 {
              ; byte-sized operands
              insn mulbq#sreg
+                  xor ax, ax
                   mov al, q0b
                   mul q#sreg#b
                   mov q0, ax
@@ -351,6 +354,8 @@ section '.code' code readable executable
 
              ; word-sized operands
              insn mulwq#sreg
+                  xor rax, rax
+                  xor rdx, rdx
                   mov ax, q0w
                   mul q#sreg#w
                   mov q0, ax
@@ -363,6 +368,7 @@ section '.code' code readable executable
         rept 2 sreg:2 {
              ; byte-sized operands
              insn smulbq#sreg
+                  xor ax, ax
                   mov al, q0b
                   imul q#sreg#b
                   mov q0, ax
@@ -371,6 +377,8 @@ section '.code' code readable executable
 
              ; word-sized operands
              insn smulwq#sreg
+                  xor rax, rax
+                  xor rdx, rdx
                   mov ax, q0w
                   imul q#sreg#w
                   mov q0, ax
@@ -383,6 +391,7 @@ section '.code' code readable executable
         rept 2 sreg:2 {
              ; byte-sized operands
              insn divbq#sreg
+                  xor ax, ax
                   mov ax, q0w
                   div q#sreg#b
                   mov q0, ax
@@ -391,6 +400,8 @@ section '.code' code readable executable
 
              ; word-sized operands
              insn divwq#sreg
+                  xor rax, rax
+                  xor rdx, rdx
                   mov dx, q1w
                   mov ax, q0w
                   div q#sreg#w
@@ -404,6 +415,7 @@ section '.code' code readable executable
         rept 2 sreg:2 {
              ; byte-sized operands
              insn sdivbq#sreg
+                  xor ax, ax
                   mov ax, q0w
                   idiv q#sreg#b
                   mov q0, ax
@@ -412,6 +424,8 @@ section '.code' code readable executable
 
              ; word-sized operands
              insn sdivwq#sreg
+                  xor rax, rax
+                  xor rdx, rdx
                   mov dx, q1w
                   mov ax, q0w
                   idiv q#sreg#w
@@ -461,13 +475,13 @@ section '.code' code readable executable
         ; bitwise not instructions
         rept 4 dreg:0 {
                   ; byte-sized operands
-                  insn notbq#dreg
+                  insn invbq#dreg
                        not q#dreg#b
                        update_qbx_flags = 1
                   endinsn
 
                   ; word-sized operands
-                  insn notwq#dreg
+                  insn invwq#dreg
                        not q#dreg#w
                        update_qbx_flags = 1
                   endinsn
@@ -492,10 +506,190 @@ section '.code' code readable executable
              \}
         }
 
+        ; shift left instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized operands
+                  insn shlbq\#dreg\#q#sreg
+                       movzx rcx, q#sreg
+                       shl q\#dreg\#b, cl
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn shlwq\#dreg\#q#sreg
+                       movzx rcx, q#sreg
+                       shl q\#dreg\#w, cl
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+        ; shift right instructions
+        rept 4 sreg:0 {
+             rept 4 dreg:0 \{
+                  ; byte-sized operands
+                  insn shrbq\#dreg\#q#sreg
+                       movzx rcx, q#sreg
+                       shr q\#dreg\#b, cl
+                       update_qbx_flags = 1
+                  endinsn
+
+                  ; word-sized operands
+                  insn shrwq\#dreg\#q#sreg
+                       movzx rcx, q#sreg
+                       shr q\#dreg\#w, cl
+                       update_qbx_flags = 1
+                  endinsn
+
+             \}
+        }
+
+        ; unconditional jump to indirect address.
+        insn jui
+             mov qipw, q0
+        endinsn
+
+        ; unconditional jump to direct address.
+        insn jud
+             movzx rcx, word [qbx_mem + qip]
+             mov qipw, cx
+        endinsn
+
+        ; convenience macro for defining conditional jump insn impls.
+        macro _define_cond_jump cc* {
+              insn j#cc#i
+                   cmov#cc qipw, q0
+              endinsn
+
+              ; note that the impl for conditional jump to direct address
+              ; needs to advance the insn ptr ONLY if the condition is not
+              ; fulfilled. to do this, we use x86 setCC with a negated
+              ; condition, multiply result by 2 and add it to the insn ptr
+              ; at the end.
+              insn j#cc#d
+                   movzx rcx, word [qbx_mem + qip]
+                   setn#cc dl
+                   cmov#cc qipw, cx
+                   shl     dl, 1
+                   add     qipw, dx
+              endinsn
+
+              ; analogous implementations for the negative case.
+
+              insn jn#cc#i
+                   cmovn#cc qipw, q0
+              endinsn
+
+              insn jn#cc#d
+                   movzx rcx, word [qbx_mem + qip]
+                   set#cc dl
+                   cmovn#cc qipw, cx
+                   shl     dl, 1
+                   add     qipw, dx
+              endinsn
+        }
+
+        _define_cond_jump z
+        _define_cond_jump a
+        _define_cond_jump b
+        _define_cond_jump g
+        _define_cond_jump l
+        _define_cond_jump ae
+        _define_cond_jump be
+        _define_cond_jump ge
+        _define_cond_jump le
+
+        ; call procedure at indirect address.
+        insn jcalli
+             sub qsp, 2
+             mov word [qbx_mem + qsp], qipw
+             mov qipw, q0
+        endinsn
+
+        ; call procedure at direct address.
+        insn jcalld
+             sub qsp, 2
+             mov word [qbx_mem + qsp], qipw
+             movzx rcx, word [qbx_mem + qip]
+             mov qipw, cx
+        endinsn
+
+        ; return
+        insn return
+             mov qipw, word [qbx_mem + qsp]
+             add qsp, 2
+        endinsn
+
+        insn yld
+             ; save QBX state before handling yield event.
+             pushfq   ; save flags that haven't been committed to qflags yet.
+             push q0
+             push q1
+             push q2
+             push q3
+             movzx rcx, word [qbx_mem + qip]  ; read yield code into rcx.
+             add qip, 2                       ; advance ip.
+             push qip                         ; save ip.
+             push qsp
+             push qflags
+             ; find appropriate handler.
+             cmp rcx, 0x01
+             je yld_screenupd
+             cmp rcx, 0x02
+             je yld_sleep
+        yld_debugbreak:
+             ; YIELD CODE 0x00 -- debug break.
+             ; this is also triggered when no other matching handler is found.
+             int3
+             jmp yld_return
+        yld_screenupd:
+            ; YIELD CODE 0x01 -- screen update.
+            ; q0 has pointer to screen area in memory;
+            ; q1 has width/height of updated rect;
+            ; q2 has X/Y coords of upper left corner of updated rect.
+            add r12, qbx_mem
+            xor rax, rax
+            mov bx, r13w
+            mov ah, bl
+            shl rax, 8
+            mov al, bh
+            mov bx, q2
+            and bx, 0xff00
+            shr bx, 8
+            mov word [screen_rect.Left], bx
+            and q2, 0x00ff
+            mov word [screen_rect.Top], q2
+            call64 [WriteConsoleOutputA], [con_bbuf], r12, rax, 0, screen_rect
+            call64 [SetConsoleActiveScreenBuffer], [con_bbuf]
+            mov r10, [con_bbuf]
+            mov r11, [con_fbuf]
+            mov [con_bbuf], r11
+            mov [con_fbuf], r10
+            xor r12, r12
+            jmp yld_return
+        yld_sleep:
+            ; YIELD CODE 0x02 -- sleep.
+            ; q0 contains the number of milliseconds to sleep.
+            movzx rcx, q0
+            call64 [Sleep], rcx
+            jmp yld_return
+        yld_return:
+             ; restore QBX state.
+             pop qflags
+             pop qsp
+             pop qip
+             pop q3
+             pop q2
+             pop q1
+             pop q0
+             popfq
+        endinsn
+
         update_flags_advance:
+                ; commit the current set of flags to the qflags register and
+                ; proceed to the next insn.
                 lahf
                 mov qflags, rax
                 jmp advance
-
-
-

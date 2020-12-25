@@ -27,3 +27,4 @@ qipw equ si
 
 ; flags
 qflags equ r11
+qflagsw equ r11w
