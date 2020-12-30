@@ -391,7 +391,7 @@ section '.code' code readable executable
              insn divbq#sreg
                   xor dx, dx
                   xor ax, ax
-                  mov al, q0b
+                  mov ax, q0w
                   movzx cx, q#sreg#b
                   div cx
                   mov q0, ax
@@ -417,7 +417,7 @@ section '.code' code readable executable
              insn sdivbq#sreg
                   xor dx, dx
                   xor ax, ax
-                  mov al, q0b
+                  mov ax, q0w
                   movzx cx, q#sreg#b
                   idiv cx
                   mov q0, ax

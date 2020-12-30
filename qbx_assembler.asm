@@ -84,8 +84,8 @@ _binop_alu_insn smul
 
 macro _unop_alu_insn name {
       macro q#name opsize*, r* \{
-            if ((name eq mul)|(name eq smul)|(name eq div)|(name eq sdiv)) & \
-               ((r eq q0)|(r eq q1))
+            if ((name eq div)|(name eq sdiv)) & \
+               (r eq q0)
                err "invalid instruction"
             end if
             _check_reg (#r)
