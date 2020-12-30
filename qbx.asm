@@ -389,10 +389,13 @@ section '.code' code readable executable
         rept 3 sreg {
              ; byte-sized operands
              insn divbq#sreg
+                  xor dx, dx
                   xor ax, ax
-                  mov ax, q0w
-                  div q#sreg#b
+                  mov al, q0b
+                  movzx cx, q#sreg#b
+                  div cx
                   mov q0, ax
+                  mov q1, dx
                   update_qbx_flags = 1
              endinsn
 
@@ -400,7 +403,6 @@ section '.code' code readable executable
              insn divwq#sreg
                   xor rax, rax
                   xor rdx, rdx
-                  mov dx, q1w
                   mov ax, q0w
                   div q#sreg#w
                   mov q0, ax
@@ -413,10 +415,13 @@ section '.code' code readable executable
         rept 3 sreg {
              ; byte-sized operands
              insn sdivbq#sreg
+                  xor dx, dx
                   xor ax, ax
-                  mov ax, q0w
-                  idiv q#sreg#b
+                  mov al, q0b
+                  movzx cx, q#sreg#b
+                  idiv cx
                   mov q0, ax
+                  mov q1, dx
                   update_qbx_flags = 1
              endinsn
 
@@ -424,7 +429,6 @@ section '.code' code readable executable
              insn sdivwq#sreg
                   xor rax, rax
                   xor rdx, rdx
-                  mov dx, q1w
                   mov ax, q0w
                   idiv q#sreg#w
                   mov q0, ax
@@ -435,8 +439,8 @@ section '.code' code readable executable
 
 
         ; bitwise and instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn andbq\#dreg\#q#sreg
                        and q\#dreg\#b, q#sreg#b
@@ -453,8 +457,8 @@ section '.code' code readable executable
         }
 
         ; bitwise or instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn orbq\#dreg\#q#sreg
                        or q\#dreg\#b, q#sreg#b
@@ -471,7 +475,7 @@ section '.code' code readable executable
         }
 
         ; bitwise not instructions
-        rept 4 dreg:0 {
+        rept QBX_NUM_REGISTERS dreg:0 {
                   ; byte-sized operands
                   insn invbq#dreg
                        not q#dreg#b
@@ -487,8 +491,8 @@ section '.code' code readable executable
         }
 
         ; bitwise xor instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn xorbq\#dreg\#q#sreg
                        xor q\#dreg\#b, q#sreg#b
@@ -505,8 +509,8 @@ section '.code' code readable executable
         }
 
         ; shift left instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn shlbq\#dreg\#q#sreg
                        movzx rcx, q#sreg
@@ -525,8 +529,8 @@ section '.code' code readable executable
         }
 
         ; shift right instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn shrbq\#dreg\#q#sreg
                        movzx rcx, q#sreg
