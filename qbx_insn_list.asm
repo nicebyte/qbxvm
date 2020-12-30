@@ -143,20 +143,80 @@ common
       subwq3q1, \
       subwq3q2, \
       subwq3q3, \
-      mulbq2,   \
-      mulbq3,   \
-      mulwq2,   \
-      mulwq3,   \
-      smulbq2,  \
-      smulbq3,  \
-      smulwq2,  \
-      smulwq3,  \
+      mulbq0q0, \
+      mulbq0q1, \
+      mulbq0q2, \
+      mulbq0q3, \
+      mulbq1q0, \
+      mulbq1q1, \
+      mulbq1q2, \
+      mulbq1q3, \
+      mulbq2q0, \
+      mulbq2q1, \
+      mulbq2q2, \
+      mulbq2q3, \
+      mulbq3q0, \
+      mulbq3q1, \
+      mulbq3q2, \
+      mulbq3q3, \
+      mulwq0q0, \
+      mulwq0q1, \
+      mulwq0q2, \
+      mulwq0q3, \
+      mulwq1q0, \
+      mulwq1q1, \
+      mulwq1q2, \
+      mulwq1q3, \
+      mulwq2q0, \
+      mulwq2q1, \
+      mulwq2q2, \
+      mulwq2q3, \
+      mulwq3q0, \
+      mulwq3q1, \
+      mulwq3q2, \
+      mulwq3q3, \
+      smulbq0q0, \
+      smulbq0q1, \
+      smulbq0q2, \
+      smulbq0q3, \
+      smulbq1q0, \
+      smulbq1q1, \
+      smulbq1q2, \
+      smulbq1q3, \
+      smulbq2q0, \
+      smulbq2q1, \
+      smulbq2q2, \
+      smulbq2q3, \
+      smulbq3q0, \
+      smulbq3q1, \
+      smulbq3q2, \
+      smulbq3q3, \
+      smulwq0q0, \
+      smulwq0q1, \
+      smulwq0q2, \
+      smulwq0q3, \
+      smulwq1q0, \
+      smulwq1q1, \
+      smulwq1q2, \
+      smulwq1q3, \
+      smulwq2q0, \
+      smulwq2q1, \
+      smulwq2q2, \
+      smulwq2q3, \
+      smulwq3q0, \
+      smulwq3q1, \
+      smulwq3q2, \
+      smulwq3q3, \
+      divbq1,   \
       divbq2,   \
       divbq3,   \
+      divwq1,   \
       divwq2,   \
       divwq3,   \
+      sdivbq1,  \
       sdivbq2,  \
       sdivbq3,  \
+      sdivwq1,  \
       sdivwq2,  \
       sdivwq3,  \
       andbq0q0, \

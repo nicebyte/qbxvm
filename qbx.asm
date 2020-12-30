@@ -64,6 +64,7 @@ section '.mem' data readable writeable
         QBX_MEM_SIZE = 1024 * 16  ; 16 K
         qbx_mem db QBX_MEM_SIZE dup ?
 
+
 ; all executable code lives in this section.
 section '.code' code readable executable
         start:  ; entry point - program starts here.
@@ -187,7 +188,7 @@ section '.code' code readable executable
         endinsn
 
         ; move immediate value into register.
-         rept 4 reg:0 {
+         rept QBX_NUM_REGISTERS reg:0 {
               ; word-sized operands.
               insn moviwq#reg
                    mov q#reg, word [qbx_mem + qip]
@@ -202,7 +203,7 @@ section '.code' code readable executable
         }
 
         ; move value between registers.
-        rept 4 tgt:0 {
+        rept QBX_NUM_REGISTERS tgt:0 {
              rept 4 src:0 \{
                   if ~(tgt eq \src) ; src and dst must be different.
                        ; word-sized operands.
@@ -220,7 +221,7 @@ section '.code' code readable executable
         }
 
         ; store value to direct address.
-        rept 4 reg:0 {
+        rept QBX_NUM_REGISTERS reg:0 {
              ; word-sized operand.
              insn storwdq#reg
                 movzx rcx, word [qbx_mem + qip]
@@ -250,7 +251,7 @@ section '.code' code readable executable
         }
 
         ; load value from direct address.
-        rept 4 reg:0 {
+        rept QBX_NUM_REGISTERS reg:0 {
              ; word-sized operand.
              insn loadwdq#reg
                 movzx rcx, word [qbx_mem + qip]
@@ -280,7 +281,7 @@ section '.code' code readable executable
         }
 
         ; push value onto the stack
-        rept 4 reg:0 {
+        rept QBX_NUM_REGISTERS reg:0 {
              insn pushwq#reg
                   sub qsp, 2
                   mov word [qbx_mem + qsp + 1], q#reg
@@ -293,7 +294,7 @@ section '.code' code readable executable
         }
 
         ; pop word-sized value from the stack.
-        rept 4 reg:0 {
+        rept QBX_NUM_REGISTERS reg:0 {
              insn popwq#reg
                 mov q#reg, word [qbx_mem + qsp + 1]
                 add qsp, 2
@@ -306,8 +307,8 @@ section '.code' code readable executable
         }
 
         ; addition instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn addbq\#dreg\#q#sreg
                        add q\#dreg\#b, q#sreg#b
@@ -324,8 +325,8 @@ section '.code' code readable executable
         }
 
         ; subtraction instructions
-        rept 4 sreg:0 {
-             rept 4 dreg:0 \{
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
                   ; byte-sized operands
                   insn subbq\#dreg\#q#sreg
                        sub q\#dreg\#b, q#sreg#b
@@ -342,53 +343,50 @@ section '.code' code readable executable
         }
 
         ; unsigned multiplication
-        rept 2 sreg:2 {
-             ; byte-sized operands
-             insn mulbq#sreg
-                  xor ax, ax
-                  mov al, q0b
-                  mul q#sreg#b
-                  mov q0, ax
-                  update_qbx_flags = 1
-             endinsn
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
+                  ; byte-sized operands
+                  insn mulbq\#dreg\#q#sreg
+                       xor rax, rax
+                       mov al, q\#dreg\#b
+                       mul q#sreg#b
+                       mov q\#dreg\#b, al
+                       update_qbx_flags = 1
+                  endinsn
 
-             ; word-sized operands
-             insn mulwq#sreg
-                  xor rax, rax
-                  xor rdx, rdx
-                  mov ax, q0w
-                  mul q#sreg#w
-                  mov q0, ax
-                  mov q1, dx
-                  update_qbx_flags = 1
-             endinsn
+                 ; word-sized operands
+                 insn mulwq\#dreg\#q#sreg
+                      xor rax, rax
+                      mov ax, q\#dreg\#w
+                      mul q#sreg#w
+                      mov q\#dreg\#w, ax
+                      update_qbx_flags = 1
+                  endinsn
+             \}
         }
 
         ; signed multiplication
-        rept 2 sreg:2 {
-             ; byte-sized operands
-             insn smulbq#sreg
-                  xor ax, ax
-                  mov al, q0b
-                  imul q#sreg#b
-                  mov q0, ax
-                  update_qbx_flags = 1
-             endinsn
+        rept QBX_NUM_REGISTERS sreg:0 {
+             rept QBX_NUM_REGISTERS dreg:0 \{
+                  ; byte-sized operands
+                  insn smulbq\#dreg\#q#sreg
+                       xor rax, rax
+                       mov al, q\#dreg\#b
+                       imul q#sreg#b
+                       mov q\#dreg\#b, al
+                       update_qbx_flags = 1
+                  endinsn
 
-             ; word-sized operands
-             insn smulwq#sreg
-                  xor rax, rax
-                  xor rdx, rdx
-                  mov ax, q0w
-                  imul q#sreg#w
-                  mov q0, ax
-                  mov q1, dx
-                  update_qbx_flags = 1
-             endinsn
+                 ; word-sized operands
+                 insn smulwq\#dreg\#q#sreg
+                      imul q\#dreg\#w, q#sreg#w
+                      update_qbx_flags = 1
+                  endinsn
+             \}
         }
 
         ; unsigned division
-        rept 2 sreg:2 {
+        rept 3 sreg {
              ; byte-sized operands
              insn divbq#sreg
                   xor ax, ax
@@ -412,7 +410,7 @@ section '.code' code readable executable
         }
 
         ; signed division
-        rept 2 sreg:2 {
+        rept 3 sreg {
              ; byte-sized operands
              insn sdivbq#sreg
                   xor ax, ax

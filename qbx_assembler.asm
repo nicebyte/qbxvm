@@ -79,6 +79,8 @@ _binop_alu_insn or
 _binop_alu_insn xor
 _binop_alu_insn shr
 _binop_alu_insn shl
+_binop_alu_insn mul
+_binop_alu_insn smul
 
 macro _unop_alu_insn name {
       macro q#name opsize*, r* \{
@@ -92,8 +94,6 @@ macro _unop_alu_insn name {
       \}
 }
 
-_unop_alu_insn mul
-_unop_alu_insn smul
 _unop_alu_insn div
 _unop_alu_insn sdiv
 _unop_alu_insn inv
