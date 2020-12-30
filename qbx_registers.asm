@@ -10,6 +10,7 @@ q1w equ r13w
 q2w equ r14w
 q3w equ r15w
 qaddr equ r12
+QBX_NUM_REGISTERS equ 4
 
 q0b equ r12b
 q1b equ r13b
